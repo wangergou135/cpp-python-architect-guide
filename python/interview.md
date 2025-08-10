@@ -4609,6 +4609,1024 @@ def web_frameworks_examples():
     framework_selection_guide()
     code_organization_comparison()
     django_architecture_examples()
+
+## Python Performance
+
+### Profiling tools
+
+Python provides several tools for performance analysis and optimization.
+
+```python
+import cProfile
+import pstats
+import timeit
+import time
+import functools
+from memory_profiler import profile
+import line_profiler
+
+# 1. Basic profiling with cProfile
+def fibonacci_recursive(n):
+    """Inefficient recursive Fibonacci"""
+    if n <= 1:
+        return n
+    return fibonacci_recursive(n - 1) + fibonacci_recursive(n - 2)
+
+def fibonacci_iterative(n):
+    """Efficient iterative Fibonacci"""
+    if n <= 1:
+        return n
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+
+def cProfile_example():
+    """Demonstrate cProfile usage"""
+    print("=== cProfile Example ===")
+    
+    # Profile recursive version
+    print("Profiling recursive Fibonacci:")
+    cProfile.run('fibonacci_recursive(30)')
+    
+    # Profile iterative version
+    print("\nProfiling iterative Fibonacci:")
+    cProfile.run('fibonacci_iterative(30)')
+
+def advanced_profiling():
+    """Advanced profiling with pstats"""
+    print("\n=== Advanced Profiling ===")
+    
+    # Create profiler
+    profiler = cProfile.Profile()
+    
+    # Profile code
+    profiler.enable()
+    result = fibonacci_recursive(25)
+    profiler.disable()
+    
+    # Analyze results
+    stats = pstats.Stats(profiler)
+    stats.sort_stats('cumulative')
+    print(f"Fibonacci result: {result}")
+    print("\nTop 10 functions by cumulative time:")
+    stats.print_stats(10)
+
+# 2. Memory profiling
+@profile
+def memory_intensive_function():
+    """Function that uses a lot of memory"""
+    # Create large lists
+    data = []
+    for i in range(100000):
+        data.append([j for j in range(100)])
+    
+    # Process data
+    result = []
+    for sublist in data:
+        result.append(sum(sublist))
+    
+    return result
+
+# 3. Line profiling
+@profile
+def line_by_line_example():
+    """Example for line-by-line profiling"""
+    data = list(range(100000))
+    
+    # Various operations
+    squares = [x ** 2 for x in data]
+    evens = [x for x in squares if x % 2 == 0]
+    total = sum(evens)
+    
+    return total
+
+# 4. Timing utilities
+class Timer:
+    """Context manager for timing code execution"""
+    
+    def __init__(self, name="Operation"):
+        self.name = name
+    
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+    
+    def __exit__(self, *args):
+        self.end = time.perf_counter()
+        self.duration = self.end - self.start
+        print(f"{self.name} took {self.duration:.6f} seconds")
+
+def timing_decorator(func):
+    """Decorator for timing function execution"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{func.__name__} took {end - start:.6f} seconds")
+        return result
+    return wrapper
+
+def timing_examples():
+    """Demonstrate timing utilities"""
+    print("\n=== Timing Examples ===")
+    
+    # Using context manager
+    with Timer("List comprehension"):
+        squares = [x ** 2 for x in range(100000)]
+    
+    # Using timeit
+    setup = "data = list(range(1000))"
+    list_comp_time = timeit.timeit(
+        "[x ** 2 for x in data]",
+        setup=setup,
+        number=1000
+    )
+    
+    map_time = timeit.timeit(
+        "list(map(lambda x: x ** 2, data))",
+        setup=setup,
+        number=1000
+    )
+    
+    print(f"List comprehension (1000 runs): {list_comp_time:.6f} seconds")
+    print(f"Map function (1000 runs): {map_time:.6f} seconds")
+    
+    # Using decorator
+    @timing_decorator
+    def slow_function():
+        time.sleep(0.1)
+        return "Done"
+    
+    result = slow_function()
+
+# 5. Performance comparison utilities
+def compare_performance(*functions, iterations=1000, setup_data=None):
+    """Compare performance of multiple functions"""
+    results = {}
+    
+    for func in functions:
+        if setup_data:
+            times = []
+            for _ in range(iterations):
+                data = setup_data()
+                start = time.perf_counter()
+                func(data)
+                end = time.perf_counter()
+                times.append(end - start)
+            avg_time = sum(times) / len(times)
+        else:
+            times = []
+            for _ in range(iterations):
+                start = time.perf_counter()
+                func()
+                end = time.perf_counter()
+                times.append(end - start)
+            avg_time = sum(times) / len(times)
+        
+        results[func.__name__] = avg_time
+    
+    return results
+
+def performance_comparison_example():
+    """Example of comparing different implementations"""
+    print("\n=== Performance Comparison ===")
+    
+    def list_append():
+        result = []
+        for i in range(1000):
+            result.append(i ** 2)
+        return result
+    
+    def list_comprehension():
+        return [i ** 2 for i in range(1000)]
+    
+    def generator_expression():
+        return list(i ** 2 for i in range(1000))
+    
+    results = compare_performance(
+        list_append,
+        list_comprehension,
+        generator_expression,
+        iterations=1000
+    )
+    
+    print("Performance comparison results:")
+    for func_name, avg_time in sorted(results.items(), key=lambda x: x[1]):
+        print(f"  {func_name}: {avg_time:.8f} seconds average")
+
+### Cython usage
+
+Cython allows writing C extensions using Python-like syntax for performance improvements.
+
+```python
+# Note: This is example Cython code
+# In practice, this would be in .pyx files and compiled
+
+CYTHON_EXAMPLES = '''
+# 1. Basic Cython function (would be in a .pyx file)
+def pure_python_sum(data):
+    """Pure Python sum function"""
+    total = 0
+    for item in data:
+        total += item
+    return total
+
+# Cython version with type declarations
+def cython_sum(double[:] data):
+    """Cython sum with memory view"""
+    cdef double total = 0.0
+    cdef int i
+    cdef int n = data.shape[0]
+    
+    for i in range(n):
+        total += data[i]
+    
+    return total
+
+# 2. Cython class example
+cdef class FastCalculator:
+    """Cython class for fast calculations"""
+    cdef double factor
+    
+    def __init__(self, double factor):
+        self.factor = factor
+    
+    cdef double _multiply(self, double value):
+        """Private Cython method"""
+        return value * self.factor
+    
+    def multiply(self, double value):
+        """Public method"""
+        return self._multiply(value)
+    
+    def multiply_array(self, double[:] values):
+        """Process array efficiently"""
+        cdef int i
+        cdef int n = values.shape[0]
+        cdef double[:] result = values.copy()
+        
+        for i in range(n):
+            result[i] = self._multiply(values[i])
+        
+        return result
+
+# 3. Integration with NumPy
+import numpy as np
+cimport numpy as cnp
+
+def cython_matrix_multiply(cnp.ndarray[double, ndim=2] A,
+                          cnp.ndarray[double, ndim=2] B):
+    """Cython matrix multiplication"""
+    cdef int i, j, k
+    cdef int m = A.shape[0]
+    cdef int n = A.shape[1]
+    cdef int p = B.shape[1]
+    
+    cdef cnp.ndarray[double, ndim=2] C = np.zeros((m, p), dtype=np.float64)
+    
+    for i in range(m):
+        for j in range(p):
+            for k in range(n):
+                C[i, j] += A[i, k] * B[k, j]
+    
+    return C
+
+# 4. Setup.py for compilation
+setup_py_content = """
+from setuptools import setup
+from Cython.Build import cythonize
+import numpy
+
+setup(
+    ext_modules = cythonize("fast_module.pyx"),
+    include_dirs=[numpy.get_include()]
+)
+"""
+
+# Usage example
+def demonstrate_cython_benefits():
+    """Show the benefits of using Cython"""
+    # This would be the comparison if Cython module was compiled
+    import numpy as np
+    
+    data = np.random.random(1000000)
+    
+    # Pure Python timing
+    start = time.perf_counter()
+    python_result = sum(data)
+    python_time = time.perf_counter() - start
+    
+    # NumPy timing (for comparison)
+    start = time.perf_counter()
+    numpy_result = np.sum(data)
+    numpy_time = time.perf_counter() - start
+    
+    print("Cython Performance Benefits:")
+    print(f"Pure Python sum: {python_time:.6f} seconds")
+    print(f"NumPy sum: {numpy_time:.6f} seconds")
+    print(f"Speedup with NumPy: {python_time / numpy_time:.1f}x")
+    print("Cython would typically give 10-100x speedup over pure Python")
+'''
+
+def cython_usage_examples():
+    """Demonstrate Cython concepts"""
+    print("=== Cython Usage ===")
+    print("Cython allows writing C extensions with Python-like syntax")
+    print("\nKey Cython features:")
+    print("• Static type declarations (cdef)")
+    print("• Memory views for efficient array access")
+    print("• Direct C API access")
+    print("• Automatic Python/C type conversion")
+    print("• Optional GIL release for parallel processing")
+    
+    print("\nTypical performance improvements:")
+    print("• 2-10x for general code")
+    print("• 10-100x for numerical computations")
+    print("• 100-1000x for tight loops with minimal Python interaction")
+
+### Multiprocessing vs threading
+
+```python
+import threading
+import multiprocessing
+import time
+import concurrent.futures
+from queue import Queue
+import os
+
+# CPU-bound task for comparison
+def cpu_intensive_task(n):
+    """CPU-intensive task that benefits from multiprocessing"""
+    total = 0
+    for i in range(n):
+        total += i ** 2
+    return total
+
+# I/O-bound task for comparison
+def io_intensive_task(duration):
+    """I/O-intensive task that benefits from threading"""
+    time.sleep(duration)
+    return f"Task completed after {duration} seconds"
+
+def network_simulation(url):
+    """Simulate network request"""
+    # Simulate varying network delays
+    delay = 0.1 + (hash(url) % 10) / 100
+    time.sleep(delay)
+    return f"Data from {url}"
+
+def threading_example():
+    """Demonstrate threading for I/O-bound tasks"""
+    print("=== Threading Example ===")
+    
+    urls = [f"https://api{i}.example.com" for i in range(10)]
+    
+    # Sequential execution
+    start_time = time.time()
+    sequential_results = []
+    for url in urls:
+        result = network_simulation(url)
+        sequential_results.append(result)
+    sequential_time = time.time() - start_time
+    
+    # Threaded execution
+    start_time = time.time()
+    threaded_results = []
+    
+    def worker(url, results, index):
+        result = network_simulation(url)
+        results[index] = result
+    
+    threads = []
+    threaded_results = [None] * len(urls)
+    
+    for i, url in enumerate(urls):
+        thread = threading.Thread(target=worker, args=(url, threaded_results, i))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
+    
+    threaded_time = time.time() - start_time
+    
+    print(f"Sequential time: {sequential_time:.2f} seconds")
+    print(f"Threaded time: {threaded_time:.2f} seconds")
+    print(f"Threading speedup: {sequential_time / threaded_time:.1f}x")
+
+def multiprocessing_example():
+    """Demonstrate multiprocessing for CPU-bound tasks"""
+    print("\n=== Multiprocessing Example ===")
+    
+    tasks = [1000000] * 4  # 4 CPU-intensive tasks
+    
+    # Sequential execution
+    start_time = time.time()
+    sequential_results = []
+    for task in tasks:
+        result = cpu_intensive_task(task)
+        sequential_results.append(result)
+    sequential_time = time.time() - start_time
+    
+    # Multiprocessing execution
+    start_time = time.time()
+    with multiprocessing.Pool(processes=4) as pool:
+        multiprocess_results = pool.map(cpu_intensive_task, tasks)
+    multiprocess_time = time.time() - start_time
+    
+    print(f"Sequential time: {sequential_time:.2f} seconds")
+    print(f"Multiprocess time: {multiprocess_time:.2f} seconds")
+    print(f"Multiprocessing speedup: {sequential_time / multiprocess_time:.1f}x")
+
+def concurrent_futures_examples():
+    """Demonstrate concurrent.futures for both threading and multiprocessing"""
+    print("\n=== Concurrent Futures ===")
+    
+    # Threading with ThreadPoolExecutor
+    urls = [f"https://api{i}.example.com" for i in range(8)]
+    
+    start_time = time.time()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_url = {executor.submit(network_simulation, url): url for url in urls}
+        threading_results = []
+        
+        for future in concurrent.futures.as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                result = future.result()
+                threading_results.append(result)
+            except Exception as exc:
+                print(f"URL {url} generated exception: {exc}")
+    
+    threading_time = time.time() - start_time
+    
+    # Multiprocessing with ProcessPoolExecutor
+    tasks = [500000] * 4
+    
+    start_time = time.time()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        process_results = list(executor.map(cpu_intensive_task, tasks))
+    process_time = time.time() - start_time
+    
+    print(f"ThreadPoolExecutor time: {threading_time:.2f} seconds")
+    print(f"ProcessPoolExecutor time: {process_time:.2f} seconds")
+
+def producer_consumer_examples():
+    """Demonstrate producer-consumer patterns"""
+    print("\n=== Producer-Consumer Patterns ===")
+    
+    # Threading version
+    def threading_producer_consumer():
+        """Producer-consumer with threading"""
+        queue = Queue(maxsize=10)
+        
+        def producer():
+            for i in range(20):
+                item = f"item_{i}"
+                queue.put(item)
+                print(f"Produced {item}")
+                time.sleep(0.1)
+            
+            # Signal completion
+            queue.put(None)
+        
+        def consumer(consumer_id):
+            while True:
+                item = queue.get()
+                if item is None:
+                    queue.put(None)  # Pass signal to other consumers
+                    break
+                
+                print(f"Consumer {consumer_id} consumed {item}")
+                time.sleep(0.15)
+                queue.task_done()
+        
+        # Start producer and consumers
+        producer_thread = threading.Thread(target=producer)
+        consumer_threads = [
+            threading.Thread(target=consumer, args=(i,))
+            for i in range(3)
+        ]
+        
+        producer_thread.start()
+        for thread in consumer_threads:
+            thread.start()
+        
+        producer_thread.join()
+        for thread in consumer_threads:
+            thread.join()
+    
+    # Multiprocessing version
+    def multiprocessing_producer_consumer():
+        """Producer-consumer with multiprocessing"""
+        queue = multiprocessing.Queue(maxsize=10)
+        
+        def producer(q):
+            for i in range(20):
+                item = f"item_{i}"
+                q.put(item)
+                print(f"Produced {item}")
+                time.sleep(0.1)
+            
+            # Signal completion
+            q.put(None)
+        
+        def consumer(q, consumer_id):
+            while True:
+                item = q.get()
+                if item is None:
+                    q.put(None)  # Pass signal to other consumers
+                    break
+                
+                print(f"Consumer {consumer_id} consumed {item}")
+                time.sleep(0.15)
+        
+        # Start processes
+        producer_process = multiprocessing.Process(target=producer, args=(queue,))
+        consumer_processes = [
+            multiprocessing.Process(target=consumer, args=(queue, i))
+            for i in range(3)
+        ]
+        
+        producer_process.start()
+        for process in consumer_processes:
+            process.start()
+        
+        producer_process.join()
+        for process in consumer_processes:
+            process.join()
+    
+    print("Threading producer-consumer:")
+    threading_producer_consumer()
+    
+    print("\nMultiprocessing producer-consumer:")
+    multiprocessing_producer_consumer()
+
+def comparison_guide():
+    """Guide for choosing between threading and multiprocessing"""
+    print("\n=== Threading vs Multiprocessing Guide ===")
+    
+    comparison = {
+        "Use Threading For": [
+            "I/O-bound tasks (file operations, network requests)",
+            "Tasks that spend time waiting",
+            "Shared memory access",
+            "Lower overhead for task switching",
+            "UI responsiveness"
+        ],
+        "Use Multiprocessing For": [
+            "CPU-bound tasks (calculations, data processing)",
+            "Tasks that can run completely independently",
+            "Bypassing GIL limitations",
+            "Fault isolation (process crashes don't affect others)",
+            "True parallelism on multi-core systems"
+        ],
+        "Threading Limitations": [
+            "GIL prevents true CPU parallelism",
+            "Shared memory can cause race conditions",
+            "Debugging can be complex",
+            "Limited scalability for CPU-bound tasks"
+        ],
+        "Multiprocessing Limitations": [
+            "Higher memory overhead",
+            "Inter-process communication is more expensive",
+            "Serialization overhead for data sharing",
+            "More complex setup and coordination"
+        ]
+    }
+    
+    for category, items in comparison.items():
+        print(f"\n{category}:")
+        for item in items:
+            print(f"  • {item}")
+
+def performance_examples():
+    """Run all performance examples"""
+    cProfile_example()
+    advanced_profiling()
+    timing_examples()
+    performance_comparison_example()
+    cython_usage_examples()
+    threading_example()
+    multiprocessing_example()
+    concurrent_futures_examples()
+    producer_consumer_examples()
+    comparison_guide()
+
+## Testing and Development
+
+### Unit testing frameworks
+
+```python
+import unittest
+import pytest
+from unittest.mock import Mock, patch, MagicMock
+import tempfile
+import os
+
+# Example classes to test
+class Calculator:
+    """Simple calculator for testing examples"""
+    
+    def add(self, a, b):
+        return a + b
+    
+    def subtract(self, a, b):
+        return a - b
+    
+    def multiply(self, a, b):
+        return a * b
+    
+    def divide(self, a, b):
+        if b == 0:
+            raise ValueError("Cannot divide by zero")
+        return a / b
+    
+    def power(self, base, exponent):
+        return base ** exponent
+
+class FileProcessor:
+    """File processor for testing file operations"""
+    
+    def read_file(self, filename):
+        with open(filename, 'r') as f:
+            return f.read()
+    
+    def write_file(self, filename, content):
+        with open(filename, 'w') as f:
+            f.write(content)
+    
+    def process_data(self, data):
+        """Process data and return statistics"""
+        if not data:
+            return {"count": 0, "sum": 0, "average": 0}
+        
+        numbers = [float(x) for x in data.split(',') if x.strip()]
+        return {
+            "count": len(numbers),
+            "sum": sum(numbers),
+            "average": sum(numbers) / len(numbers) if numbers else 0
+        }
+
+# 1. unittest examples
+class TestCalculatorUnittest(unittest.TestCase):
+    """unittest example for Calculator"""
+    
+    def setUp(self):
+        """Set up test fixtures before each test method"""
+        self.calc = Calculator()
+    
+    def tearDown(self):
+        """Clean up after each test method"""
+        pass  # Nothing to clean up in this example
+    
+    def test_add(self):
+        """Test addition operation"""
+        self.assertEqual(self.calc.add(2, 3), 5)
+        self.assertEqual(self.calc.add(-1, 1), 0)
+        self.assertEqual(self.calc.add(0, 0), 0)
+    
+    def test_subtract(self):
+        """Test subtraction operation"""
+        self.assertEqual(self.calc.subtract(5, 3), 2)
+        self.assertEqual(self.calc.subtract(1, 1), 0)
+        self.assertEqual(self.calc.subtract(0, 5), -5)
+    
+    def test_multiply(self):
+        """Test multiplication operation"""
+        self.assertEqual(self.calc.multiply(3, 4), 12)
+        self.assertEqual(self.calc.multiply(-2, 3), -6)
+        self.assertEqual(self.calc.multiply(0, 100), 0)
+    
+    def test_divide(self):
+        """Test division operation"""
+        self.assertEqual(self.calc.divide(10, 2), 5)
+        self.assertEqual(self.calc.divide(9, 3), 3)
+        self.assertAlmostEqual(self.calc.divide(1, 3), 0.333333, places=5)
+    
+    def test_divide_by_zero(self):
+        """Test division by zero raises exception"""
+        with self.assertRaises(ValueError):
+            self.calc.divide(10, 0)
+        
+        with self.assertRaisesRegex(ValueError, "Cannot divide by zero"):
+            self.calc.divide(5, 0)
+    
+    def test_power(self):
+        """Test power operation"""
+        self.assertEqual(self.calc.power(2, 3), 8)
+        self.assertEqual(self.calc.power(5, 0), 1)
+        self.assertEqual(self.calc.power(10, 1), 10)
+    
+    @unittest.skip("Skipping this test for demonstration")
+    def test_skipped(self):
+        """This test will be skipped"""
+        self.fail("This test should not run")
+    
+    @unittest.skipIf(os.name == 'nt', "Skip on Windows")
+    def test_conditional_skip(self):
+        """Test that may be skipped based on condition"""
+        self.assertTrue(True)
+
+# 2. pytest examples
+class TestCalculatorPytest:
+    """pytest example for Calculator"""
+    
+    def setup_method(self):
+        """Setup for each test method"""
+        self.calc = Calculator()
+    
+    def test_add(self):
+        """Test addition with pytest"""
+        assert self.calc.add(2, 3) == 5
+        assert self.calc.add(-1, 1) == 0
+        assert self.calc.add(0, 0) == 0
+    
+    def test_subtract(self):
+        """Test subtraction with pytest"""
+        assert self.calc.subtract(5, 3) == 2
+        assert self.calc.subtract(1, 1) == 0
+    
+    def test_divide_by_zero(self):
+        """Test division by zero with pytest"""
+        with pytest.raises(ValueError, match="Cannot divide by zero"):
+            self.calc.divide(10, 0)
+    
+    @pytest.mark.parametrize("a,b,expected", [
+        (2, 3, 5),
+        (-1, 1, 0),
+        (0, 0, 0),
+        (100, -50, 50),
+    ])
+    def test_add_parametrized(self, a, b, expected):
+        """Parametrized test for addition"""
+        assert self.calc.add(a, b) == expected
+    
+    @pytest.mark.slow
+    def test_large_power(self):
+        """Test marked as slow"""
+        result = self.calc.power(2, 1000)
+        assert result > 0
+    
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_future_feature(self):
+        """Test for future feature"""
+        pass
+
+# 3. Fixtures with pytest
+@pytest.fixture
+def calculator():
+    """Pytest fixture for calculator"""
+    return Calculator()
+
+@pytest.fixture
+def sample_data():
+    """Pytest fixture for sample data"""
+    return {
+        "numbers": [1, 2, 3, 4, 5],
+        "strings": ["hello", "world", "python"],
+        "mixed": [1, "two", 3.0, True]
+    }
+
+@pytest.fixture(scope="session")
+def temp_directory():
+    """Session-scoped fixture for temporary directory"""
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    # Cleanup after session
+    import shutil
+    shutil.rmtree(temp_dir)
+
+def test_with_fixtures(calculator, sample_data):
+    """Test using fixtures"""
+    numbers = sample_data["numbers"]
+    total = sum(numbers)
+    
+    # Test that our calculator gives same result
+    result = 0
+    for num in numbers:
+        result = calculator.add(result, num)
+    
+    assert result == total
+
+# 4. Mocking examples
+class TestFileProcessorMocking(unittest.TestCase):
+    """Test FileProcessor with mocking"""
+    
+    def setUp(self):
+        self.processor = FileProcessor()
+    
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="test content")
+    def test_read_file_mock(self, mock_file):
+        """Test file reading with mock"""
+        result = self.processor.read_file("test.txt")
+        
+        self.assertEqual(result, "test content")
+        mock_file.assert_called_once_with("test.txt", 'r')
+    
+    @patch('builtins.open', new_callable=unittest.mock.mock_open)
+    def test_write_file_mock(self, mock_file):
+        """Test file writing with mock"""
+        content = "Hello, World!"
+        self.processor.write_file("output.txt", content)
+        
+        mock_file.assert_called_once_with("output.txt", 'w')
+        mock_file().write.assert_called_once_with(content)
+    
+    def test_process_data(self):
+        """Test data processing without mocking"""
+        data = "1,2,3,4,5"
+        result = self.processor.process_data(data)
+        
+        expected = {"count": 5, "sum": 15.0, "average": 3.0}
+        self.assertEqual(result, expected)
+    
+    def test_process_empty_data(self):
+        """Test processing empty data"""
+        result = self.processor.process_data("")
+        
+        expected = {"count": 0, "sum": 0, "average": 0}
+        self.assertEqual(result, expected)
+
+# 5. Advanced mocking with pytest
+def test_mock_with_side_effect():
+    """Test using mock with side effects"""
+    mock_func = Mock(side_effect=[1, 2, ValueError("Error on third call")])
+    
+    assert mock_func() == 1
+    assert mock_func() == 2
+    
+    with pytest.raises(ValueError):
+        mock_func()
+
+def test_mock_configuration():
+    """Test mock configuration"""
+    mock_obj = Mock()
+    
+    # Configure return values
+    mock_obj.method1.return_value = "configured_result"
+    mock_obj.method2.side_effect = lambda x: x * 2
+    
+    assert mock_obj.method1() == "configured_result"
+    assert mock_obj.method2(5) == 10
+    
+    # Verify calls
+    mock_obj.method1.assert_called_once()
+    mock_obj.method2.assert_called_with(5)
+
+@patch('requests.get')
+def test_external_api_mock(mock_get):
+    """Test mocking external API calls"""
+    # Configure mock response
+    mock_response = Mock()
+    mock_response.json.return_value = {"status": "success", "data": [1, 2, 3]}
+    mock_response.status_code = 200
+    mock_get.return_value = mock_response
+    
+    # Code that would make API call
+    def fetch_data(url):
+        import requests
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        return None
+    
+    result = fetch_data("https://api.example.com/data")
+    
+    assert result == {"status": "success", "data": [1, 2, 3]}
+    mock_get.assert_called_once_with("https://api.example.com/data")
+
+# 6. Test organization and discovery
+def run_unittest_examples():
+    """Run unittest examples"""
+    print("=== unittest Examples ===")
+    
+    # Create test suite
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestCalculatorUnittest)
+    
+    # Run tests with verbose output
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    print(f"Tests run: {result.testsRun}")
+    print(f"Failures: {len(result.failures)}")
+    print(f"Errors: {len(result.errors)}")
+
+def pytest_configuration_example():
+    """Example pytest configuration"""
+    pytest_ini_content = """
+# pytest.ini
+[tool:pytest]
+testpaths = tests
+python_files = test_*.py *_test.py
+python_classes = Test*
+python_functions = test_*
+addopts = 
+    --strict-markers
+    --strict-config
+    --verbose
+    --tb=short
+    --cov=src
+    --cov-report=html
+    --cov-report=term-missing
+markers =
+    slow: marks tests as slow
+    unit: marks tests as unit tests
+    integration: marks tests as integration tests
+    smoke: marks tests as smoke tests
+"""
+    
+    print("=== pytest Configuration ===")
+    print("Example pytest.ini configuration:")
+    print(pytest_ini_content)
+
+def testing_best_practices():
+    """Testing best practices and guidelines"""
+    print("\n=== Testing Best Practices ===")
+    
+    practices = {
+        "Test Structure": [
+            "Follow AAA pattern: Arrange, Act, Assert",
+            "One assertion per test (when possible)",
+            "Clear, descriptive test names",
+            "Independent tests (no dependencies between tests)"
+        ],
+        "Test Coverage": [
+            "Aim for high coverage but focus on critical paths",
+            "Test edge cases and error conditions", 
+            "Cover both positive and negative scenarios",
+            "Don't forget integration tests"
+        ],
+        "Mocking Guidelines": [
+            "Mock external dependencies",
+            "Don't mock what you don't own (sometimes)",
+            "Use mocks to isolate units under test",
+            "Verify mock interactions when relevant"
+        ],
+        "Test Organization": [
+            "Group related tests in classes",
+            "Use fixtures for common setup",
+            "Separate unit, integration, and e2e tests",
+            "Keep tests close to the code they test"
+        ],
+        "Performance": [
+            "Keep tests fast",
+            "Use appropriate test database strategies",
+            "Parallel test execution when possible",
+            "Profile slow tests and optimize"
+        ]
+    }
+    
+    for category, items in practices.items():
+        print(f"\n{category}:")
+        for item in items:
+            print(f"  • {item}")
+
+def testing_examples():
+    """Run all testing examples"""
+    run_unittest_examples()
+    pytest_configuration_example()
+    testing_best_practices()
+    
+    print("\n=== Summary ===")
+    print("Python testing ecosystem provides:")
+    print("• unittest: Built-in testing framework")
+    print("• pytest: Popular third-party framework with many features")
+    print("• Mock/patch: For isolating dependencies")
+    print("• Fixtures: For test setup and teardown")
+    print("• Parametrized tests: For testing multiple scenarios")
+    print("• Coverage tools: For measuring test effectiveness")
+
+**Interview Tips for Python Interview Guide:**
+
+1. **Preparation Strategy:**
+   - Understand Python's memory model and GIL
+   - Practice with advanced features like decorators and metaclasses
+   - Be familiar with async programming concepts
+   - Know when to use different web frameworks
+
+2. **Common Mistakes to Avoid:**
+   - Circular imports and module design issues
+   - Not understanding mutable default arguments
+   - Inefficient use of data structures
+   - Blocking the event loop in async code
+
+3. **Best Practices to Mention:**
+   - Use virtual environments
+   - Follow PEP 8 style guidelines
+   - Write comprehensive tests
+   - Use type hints for better code documentation
+   - Profile before optimizing
+
+4. **Real-world Scenarios:**
+   - API design and development
+   - Data processing pipelines
+   - Web application architecture
+   - Performance optimization strategies
+
+This comprehensive Python interview guide covers essential topics for senior Python developers, providing both theoretical knowledge and practical examples for interviews and professional development.
 ```
 ```
 ```
