@@ -1,79 +1,53 @@
-# C++/Python 架构师技术指南
+# C++/Python Architect Guide
 
-一个全面的C++和Python架构师培养指南，包含核心技术、架构设计、最佳实践和学习路径。
+## 项目简介 (Project Introduction)
+这是一个综合性的C++和Python架构师培养指南，旨在帮助开发者掌握高级编程技能和系统架构设计。
 
-## 目录结构
+This is a comprehensive guide for C++ and Python architects, aimed at helping developers master advanced programming skills and system architecture design.
 
+## 目录结构 (Directory Structure)
 ```
 .
-├── docs/                    # 详细文档
-│   ├── cpp/                # C++相关文档
-│   ├── python/             # Python相关文档
-│   ├── architecture/       # 架构设计文档
-│   └── guidelines/         # 规范和指南
-├── examples/               # 示例代码
-│   ├── cpp/                # C++示例
-│   ├── python/             # Python示例
-│   └── projects/           # 完整项目示例
-└── tests/                  # 测试用例
+├── docs/
+│   ├── cpp/                # C++ Advanced Documentation
+│   ├── python/             # Python Advanced Documentation
+│   ├── architecture/       # Architecture Design Principles
+│   └── best-practices/     # Engineering Best Practices
+├── examples/
+│   ├── cpp/                # C++ Code Examples
+│   └── python/             # Python Code Examples
+└── tests/                  # Test Cases
 ```
 
-## 快速开始
+## 学习路径 (Learning Path)
 
-1. 克隆仓库:
-```bash
-git clone https://github.com/wangergou135/cpp-python-architect-guide.git
-cd cpp-python-architect-guide
-```
+### 1. 基础强化 (Foundation Enhancement)
+- Modern C++ Features (C++11/14/17/20)
+- Python Advanced Features
+- Data Structures and Algorithms
+- Design Patterns
 
-2. 查看文档:
-- 核心技能路径: [docs/guidelines/learning_path.md](docs/guidelines/learning_path.md)
-- C++进阶指南: [docs/cpp/README.md](docs/cpp/README.md)
-- Python进阶指南: [docs/python/README.md](docs/python/README.md)
-- 架构设计指南: [docs/architecture/README.md](docs/architecture/README.md)
+### 2. 系统架构 (System Architecture)
+- Architecture Patterns
+- Distributed Systems
+- High Performance Computing
+- Scalability Design
 
-3. 运行示例:
-```bash
-# C++示例
-cd examples/cpp
-mkdir build && cd build
-cmake ..
-make
+### 3. 工程实践 (Engineering Practice)
+- Code Quality
+- Performance Optimization
+- Testing Strategies
+- CI/CD Implementation
 
-# Python示例
-cd examples/python
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python example.py
-```
+## 如何使用 (How to Use)
+1. 克隆仓库 (Clone the repository)
+2. 选择感兴趣的主题 (Choose topics of interest)
+3. 按照指南逐步学习 (Follow the learning path)
 
-## 学习路径
+## 贡献指南 (Contributing)
+欢迎贡献！请查看CONTRIBUTING.md了解详情。
+Contributions are welcome! Please check CONTRIBUTING.md for details.
 
-1. [核心技能](docs/guidelines/core_skills.md)
-   - C++核心技术
-   - Python高级特性
-   - 工程实践能力
-
-2. [架构设计](docs/architecture/README.md)
-   - 系统架构
-   - 代码架构
-   - 技术选型
-
-3. [工程实践](docs/guidelines/engineering_practices.md)
-   - 开发流程
-   - 质量保证
-   - 性能优化
-
-4. [团队管理](docs/guidelines/team_management.md)
-   - 技术决策
-   - 团队建设
-   - 项目管理
-
-## 贡献指南
-
-欢迎贡献代码和文档！请查看[贡献指南](CONTRIBUTING.md)。
-
-## 许可证
-
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+## 许可证 (License)
+MIT License - 查看 LICENSE 文件了解详情
+MIT License - See LICENSE file for details.
